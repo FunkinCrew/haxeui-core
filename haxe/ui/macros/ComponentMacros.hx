@@ -282,7 +282,18 @@ class ComponentMacros {
                 var meta = f.getMetaByIndex("bind", n);
                 switch (meta.params) {
                     case [{expr: EField(variable, field), pos: pos}]: // one param, lets assume binding to component prop
-                        Macros.buildPropertyBinding(builder, f, variable, field);
+                        var fullExpr:Expr = {expr: EField(variable, field), pos: pos};
+                        var isComponent = false;
+                        try {
+                            var resolvedType = Context.typeof(fullExpr);
+                            var componentType = Context.getType("haxe.ui.core.Component");
+                            isComponent = Context.unify(resolvedType, componentType);
+                        } catch (e:Dynamic) {}
+                        if (isComponent) {
+                            Macros.buildPropertyBinding(builder, f, fullExpr, "value");
+                        } else {
+                            Macros.buildPropertyBinding(builder, f, variable, field);
+                        }
                     case [param1]:
                         Macros.buildPropertyBinding(builder, f, param1, "value"); // input component that has value
                 }

@@ -406,16 +406,22 @@ class Macros {
             f.remove();
         }
 
-        var variable = ExprTools.toString(variable);
+        var varStr = ExprTools.toString(variable);
+        var fullPath = (varStr + "." + field).split(".");
+        var varPath = varStr.split(".");
+
         if (hasGetter == false) {
             builder.addGetter(f.name, f.type, macro {
-                return $i{variable}.$field;
+                return $p{fullPath};
             }, null, !hasField, hasField);
+            if (hasSetter == true && !f.hasMeta(":isVar")) {
+                f.addMeta(":isVar");
+            }
         }
 
         if (hasSetter == false) {
             builder.addSetter(f.name, f.type, macro {
-                $i{variable}.$field = value;
+                $p{fullPath} = value;
                 return value;
             }, null, !hasField, hasField);
         }
@@ -427,8 +433,8 @@ class Macros {
 
         if (hasSetter == true) {
             builder.ctor.add(macro {
-                $i{variable}.registerEvent(haxe.ui.events.UIEvent.CHANGE, function(e) {
-                    $i{f.name} = Reflect.getProperty($i{variable}, $v{field});
+                $p{varPath}.registerEvent(haxe.ui.events.UIEvent.CHANGE, function(e) {
+                    $i{f.name} = Reflect.getProperty($p{varPath}, $v{field});
                 });
             });
         }
@@ -466,7 +472,18 @@ class Macros {
                     var meta = f.getMetaByIndex("bind", n);
                     switch (meta.params) {
                         case [{expr: EField(variable, field), pos: pos}]: // one param, lets assume binding to component prop
-                            buildPropertyBinding(builder, f, variable, field);
+                            var fullExpr:Expr = {expr: EField(variable, field), pos: pos};
+                            var isComponent = false;
+                            try {
+                                var resolvedType = Context.typeof(fullExpr);
+                                var componentType = Context.getType("haxe.ui.core.Component");
+                                isComponent = Context.unify(resolvedType, componentType);
+                            } catch (e:Dynamic) {}
+                            if (isComponent) {
+                                buildPropertyBinding(builder, f, fullExpr, "value");
+                            } else {
+                                buildPropertyBinding(builder, f, variable, field);
+                            }
                         case [param1]:
                             buildPropertyBinding(builder, f, param1, "value"); // input component that has value
                         case [component, event]: // two params, lets assume event binding
