@@ -31,14 +31,14 @@ class FocusManager extends FocusManagerImpl {
     //****************************************************************************************************
     public var autoFocus:Bool = true; // whether or not to automatically set focus to the first interactive component in a view when its added
     public var enabled:Bool = true; // whether or not to allow focus management globally
-    
+
     private var _applicators:Array<IFocusApplicator> = [];
-    
+
     public function new() {
         super();
         _applicators.push(new StyleFocusApplicator());
         //_applicators.push(new BoxFocusApplicator());
-        
+
         Screen.instance.registerEvent(MouseEvent.MOUSE_DOWN, onScreenMouseDown);
     }
 
@@ -49,10 +49,10 @@ class FocusManager extends FocusManagerImpl {
                 return;
             }
         }
-        
+
         focus = null;
     }
-    
+
     public function pushView(view:Component) {
         if (hasFocusableItem(view)) {
             for (k in _lastFocuses.keys()) {
@@ -76,13 +76,13 @@ class FocusManager extends FocusManagerImpl {
             focusOnFirstInteractive(e.target);
         }
     }
-    
+
     private function hasFocusableItem(view:Component):Bool {
         var list = [];
         buildFocusableList(view, list);
         return list.length != 0;
     }
-    
+
     private function focusOnFirstInteractive(view:Component) {
         var list = [];
         buildFocusableList(view, list, true);
@@ -92,9 +92,15 @@ class FocusManager extends FocusManagerImpl {
         }
         return null;
     }
-    
+
     public function removeView(view:Component) {
         _lastFocuses.remove(view);
+
+        // If the view that was removed couldn't gain focus, don't recalculate focus.
+        if (!hasFocusableItem(view)) {
+            return;
+        }
+
         var top = Screen.instance.topComponent;
         if (top == null) {
             return;
@@ -112,7 +118,7 @@ class FocusManager extends FocusManagerImpl {
         }
         return buildFocusableList(top, null);
     }
-    
+
     private var _lastFocuses:Map<Component, IFocusable> = new Map<Component, IFocusable>();
     private function set_focus(value:IFocusable):IFocusable {
         if (value != null) {
@@ -188,15 +194,15 @@ class FocusManager extends FocusManagerImpl {
             return null;
         }
         var currentFocus = null;
-        
+
         if (c == null || @:privateAccess c._isDisposed == true) {
             return null;
         }
-        
+
         if (c.hidden == true) {
             return null;
         }
-        
+
         if ((c is IFocusable)) {
             var f:IFocusable = cast c;
             if (considerAutoFocus == true && f.autoFocus == false) {
@@ -216,7 +222,7 @@ class FocusManager extends FocusManagerImpl {
         childList.sort(function(c1, c2) {
             return c1.componentTabIndex - c2.componentTabIndex;
         });
-        
+
         for (child in childList) {
             var f:IFocusable = buildFocusableList(child, list, considerAutoFocus);
             if (f != null) {
@@ -225,7 +231,7 @@ class FocusManager extends FocusManagerImpl {
         }
         return cast currentFocus;
     }
-    
+
     private override function applyFocus(c:Component) {
         super.applyFocus(c);
         cast(c, IFocusable).focus = true;
@@ -235,7 +241,7 @@ class FocusManager extends FocusManagerImpl {
             }
         }
     }
-    
+
     private override function unapplyFocus(c:Component) {
         super.unapplyFocus(c);
         cast(c, IFocusable).focus = false;
