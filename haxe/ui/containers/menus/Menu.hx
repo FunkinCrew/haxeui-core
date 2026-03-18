@@ -489,6 +489,8 @@ private class Builder extends CompositeBuilder {
             _menu.addComponent(item);
             cast(menu._internalEvents, MenuEvents).parentMenu = _menu;
             menu.registerEvent(UIEvent.PROPERTY_CHANGE, onMenuPropertyChanged);
+            menu.registerEvent(UIEvent.ENABLED, onMenuEnabled.bind(_, true));
+            menu.registerEvent(UIEvent.DISABLED, onMenuEnabled.bind(_, false));
             _subMenus.set(item, menu);
             return child;
         }
@@ -508,7 +510,18 @@ private class Builder extends CompositeBuilder {
             }
         }
     }
-    
+
+    private function onMenuEnabled(event:UIEvent, enabled:Bool) {
+        var menu:Menu = cast(event.target, Menu);
+        for (item in _subMenus.keys()) {
+            var subMenu = _subMenus.get(item);
+            if (subMenu == menu) {
+                item.disabled = !enabled;
+                break;
+            }
+        }
+    }
+
     public override function onComponentAdded(child:Component) {
         if ((child is Menu) || (child is MenuItem)) {
             _menu.registerInternalEvents(true);
