@@ -310,6 +310,12 @@ class MenuEvents extends haxe.ui.events.Events {
             left = source.screenLeft - subMenu.actualComponentWidth;
         }
 
+        // Bottom edge: clamp so submenu doesn't go below screen
+        if (top + subMenu.actualComponentHeight > Screen.instance.height) {
+            top = Screen.instance.height - subMenu.actualComponentHeight;
+        }
+        if (top < 0) top = 0;
+
         var offsetX:Float = 0;
         var offsetY:Float = 0;
         if (subMenu.style != null) {
