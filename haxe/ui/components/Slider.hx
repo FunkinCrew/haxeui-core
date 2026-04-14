@@ -192,22 +192,18 @@ private class EndBehaviour extends DataBehaviour {
         }
         
         var slider:Slider = cast(_component, Slider);
-        if (_value != null && _value < slider.min) {
-            _value = slider.min;
+
+        var v:Float = _value;
+        if (v < slider.min) v = slider.min;
+        if (v > slider.max) v = slider.max;
+        if (slider.precision != null) v = MathUtil.round(v, slider.precision);
+        if (slider.step != null) v = MathUtil.roundToNearest(v, slider.step);
+
+        if (v != _value) {
+            _previousValue = _value;
+            _value = v;
         }
 
-        if (_value != null && _value > slider.max) {
-            _value = slider.max;
-        }
-
-        if (slider.precision != null) {
-            _value = MathUtil.round(_value, slider.precision);
-        }
-
-        if (slider.step != null) {
-            _value = MathUtil.roundToNearest(_value, slider.step);
-        }
-        
         if (slider.center != null) {
             if (_value >= slider.center) {
                 range.virtualStart = slider.center;
@@ -299,12 +295,22 @@ private class PosBehaviour extends DataBehaviour {
     public override function set(value:Variant) {
         if (_component.isReady == false) {
             _value = value;
-            cast(_component, Slider).end = _value;
+            var slider = cast(_component, Slider);
+            slider.end = _value;
+            var range = _component.findComponent(Range);
+            if (range != null) {
+                range.end = _value;
+            }
             invalidateData();
             return;
         }
 
         super.set(value);
+        // Eagerly sync EndBehaviour so it doesn't push back a stale value during
+        // validation. EndBehaviour validates before PosBehaviour (registration order),
+        // and its validateData() calls slider.pos = _value — without this sync,
+        // that overwrites the value we just set.
+        cast(_component, Slider).end = value;
     }
 
     private override function validateData() {
@@ -454,6 +460,15 @@ private class Events extends haxe.ui.events.Events  {
         if (hasEvent(ActionEvent.ACTION_END, onActionEnd) == false) {
             registerEvent(ActionEvent.ACTION_END, onActionEnd);
         }
+
+        if (_slider.isReady) {
+            _initialized = true;
+            if (_previousEnd == null) {
+                _previousEnd = _range != null ? _range.end : null;
+            }
+        } else if (_slider.hasEvent(UIEvent.READY, onSliderReady) == false) {
+            _slider.registerEvent(UIEvent.READY, onSliderReady);
+        }
     }
 
     public override function unregister() {
@@ -470,28 +485,39 @@ private class Events extends haxe.ui.events.Events  {
             _range.unregisterEvent(UIEvent.CHANGE, onRangeChange);
         }
         unregisterEvent(ActionEvent.ACTION_START, onActionStart);
-        unregisterEvent(ActionEvent.ACTION_START, onActionEnd);
+        unregisterEvent(ActionEvent.ACTION_END, onActionEnd);
+        _slider.unregisterEvent(UIEvent.READY, onSliderReady);
     }
 
-    private var _rangeSynced:Bool = false;
+    private var _initialized:Bool = false;
+    private var _previousEnd:Null<Float> = null;
+
+    private function onSliderReady(e:UIEvent) {
+        _initialized = true;
+        _previousEnd = _range != null ? _range.end : null;
+        if (_range != null) {
+            var event = new UIEvent(UIEvent.CHANGE);
+            event.previousValue = _previousEnd;
+            event.value = _previousEnd;
+            _slider.dispatch(event);
+        }
+    }
+
     private function onRangeChange(e:UIEvent) {
-        if (_rangeSynced == false && _range.end == _slider.end) {
-            _rangeSynced = true;
-            if (_slider.end == 0) {
-                return;
-            }
-        }
-        if (_rangeSynced == false) {
-            return;
-        }
+        if (!_initialized) return;
+
+        var currentEnd:Null<Float> = _range != null ? _range.end : null;
+
         var event = new UIEvent(UIEvent.CHANGE);
-        event.previousValue = e.previousValue;
-        event.value = e.value;
+        event.previousValue = _previousEnd;
+        event.value = currentEnd;
+        _previousEnd = currentEnd;
+
         _slider.dispatch(event);
         if (_activeThumb != null) {
             var dragEvent = new DragEvent(DragEvent.DRAG);
-            dragEvent.previousValue = e.previousValue;
-            dragEvent.value = e.value;
+            dragEvent.previousValue = event.previousValue;
+            dragEvent.value = event.value;
             _slider.dispatch(dragEvent);
         }
     }
