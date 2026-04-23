@@ -65,11 +65,17 @@ class ScreenBase implements IComponentContainer {
 
         // lets make a little "hack": if the "top" component has
         // 'pointer-events:none' lets assume that it shouldnt
-        // be considered "top" 
+        // be considered "top". Same for hidden roots: ToolTipManager
+        // parks a persistent hidden ToolTip in rootComponents, and
+        // without this skip it becomes "top" and breaks focus lookups.
         var n = rootComponents.length - 1;
         var c = null;
         while (n >= 0) {
             c = rootComponents[n];
+            if (c.hidden == true) {
+                n--;
+                continue;
+            }
             if (c.style == null) {
                 break;
             }

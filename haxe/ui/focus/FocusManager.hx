@@ -112,11 +112,19 @@ class FocusManager extends FocusManagerImpl {
 
     public var focus(get, set):IFocusable;
     private function get_focus():IFocusable {
-        var top = Screen.instance.topComponent;
-        if (top == null) {
-            return null;
+        // Walk all roots top-down. Using Screen.topComponent alone is unreliable
+        // because a visible tooltip/popup becomes "top" and shadows focus state
+        // in the real UI beneath it. Tooltips/popups carry no focusable children,
+        // so checking them first is cheap and returning the first match is safe.
+        var roots = Screen.instance.rootComponents;
+        if (roots == null) return null;
+        var n = roots.length - 1;
+        while (n >= 0) {
+            var f = buildFocusableList(roots[n], null);
+            if (f != null) return f;
+            n--;
         }
-        return buildFocusableList(top, null);
+        return null;
     }
 
     private var _lastFocuses:Map<Component, IFocusable> = new Map<Component, IFocusable>();
