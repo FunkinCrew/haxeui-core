@@ -23,16 +23,20 @@ class ModuleMacros {
 
     #if macro
     private static var _modules:Array<Module> = [];
-    private static var _modulesProcessed:Bool;
+    @:persistent private static var _modulesBuilder:Null<CodeBuilder>;
     private static var _resourceIds:Array<String> = [];
+    @:persistent private static var _resourceStore:Map<String, haxe.io.Bytes> = new Map();
     
     public static var properties:Map<String, String> = new Map<String, String>();
     #end
 
     macro public static function processModules():Expr {
         #if !haxeui_experimental_no_cache
-        if (_modulesProcessed == true) {
-            return macro null;
+        if (_modulesBuilder != null) {
+            for (name => data in _resourceStore) {
+                Context.addResource(name, data);
+            }
+            return _modulesBuilder.expr;
         }
         #end
 
@@ -275,7 +279,7 @@ class ModuleMacros {
             );
         }
 
-        _modulesProcessed = true;
+        _modulesBuilder = builder;
 
         #if haxeui_macro_times
         stopTimer();
@@ -956,7 +960,8 @@ class ModuleMacros {
                     if (resourceList != null) {
                         resourceList.push(resourceName);
                     }
-                    Context.addResource(resourceName, File.getBytes(file));
+                    _resourceStore.set(resourceName, File.getBytes(file));
+                    Context.addResource(resourceName, _resourceStore.get(resourceName));
                 } else {
                     #if resource_resolution_verbose
                     if (includedIndex == -1) {
