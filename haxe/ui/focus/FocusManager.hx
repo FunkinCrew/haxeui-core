@@ -31,6 +31,7 @@ class FocusManager extends FocusManagerImpl {
     //****************************************************************************************************
     public var autoFocus:Bool = true; // whether or not to automatically set focus to the first interactive component in a view when its added
     public var enabled:Bool = true; // whether or not to allow focus management globally
+    public var unfocusAll:Bool = true; // whether `focus=null` clears focus from all components, or just the top one
 
     private var _applicators:Array<IFocusApplicator> = [];
 
@@ -145,13 +146,20 @@ class FocusManager extends FocusManagerImpl {
             _lastFocuses.set(root, value);
             applyFocus(cast value);
         } else {
-            var top = Screen.instance.topComponent;
-            if (top == null) {
-                return null;
-            }
-            if (_lastFocuses.exists(top)) {
-                _lastFocuses.get(top).focus = false;
-                unapplyFocus(cast _lastFocuses.get(top));
+            if (unfocusAll) {
+                for (target in _lastFocuses) {
+                    target.focus = false;
+                    unapplyFocus(cast target);
+                }
+            } else {
+                var top = Screen.instance.topComponent;
+                if (top == null) {
+                    return null;
+                }
+                if (_lastFocuses.exists(top)) {
+                    _lastFocuses.get(top).focus = false;
+                    unapplyFocus(cast _lastFocuses.get(top));
+                }
             }
         }
         return value;
