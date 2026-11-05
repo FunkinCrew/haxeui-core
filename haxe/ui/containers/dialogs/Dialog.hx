@@ -71,11 +71,14 @@ class DialogEvent extends UIEvent {
 class Dialog extends DialogBase {
     public function new() {
         super();
-        ActionManager.instance.registerEvent(ActionEvent.ACTION_START, function(event) { // global action listener
-            if (this.closable && (event.action == ActionType.CANCEL || event.action == ActionType.BACK)) {
-                hideDialog(DialogButton.CANCEL);
-            }
-        });
+        ActionManager.instance.registerEvent(ActionEvent.ACTION_START, onActionStart);
+    }
+
+    private function onActionStart(event:ActionEvent):Void {
+        // global action listener
+        if (this.closable && (event.action == ActionType.CANCEL || event.action == ActionType.BACK)) {
+            hideDialog(DialogButton.CANCEL);
+        }
     }
 
     private var __onDialogClosed:DialogEvent->Void;
@@ -88,5 +91,11 @@ class Dialog extends DialogBase {
         registerEvent(DialogEvent.DIALOG_CLOSED, value);
         __onDialogClosed = value;
         return value;
+    }
+
+    override private function onDestroy() {
+        super.onDestroy();
+        
+        ActionManager.instance.unregisterEvent(ActionEvent.ACTION_START, onActionStart);
     }
 }

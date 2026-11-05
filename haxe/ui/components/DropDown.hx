@@ -886,13 +886,22 @@ class DropDownEvents extends ButtonEvents {
         Screen.instance.registerEvent(MouseEvent.MOUSE_DOWN, onScreenMouseDown);
         Screen.instance.registerEvent(MouseEvent.RIGHT_MOUSE_DOWN, onScreenMouseDown);
         registerEvent(UIEvent.MOVE, onDropDownMoved);
+        _openScreenLeft = _dropdown.screenLeft;
+        _openScreenTop = _dropdown.screenTop;
         _dropdownOpen = true;
 
         var event = new UIEvent(UIEvent.OPEN);
         _dropdown.dispatch(event);
     }
     
+    private var _openScreenLeft:Float = 0;
+    private var _openScreenTop:Float = 0;
+
     private function onDropDownMoved(_) {
+        // Scroll views send MOVE to every child whenever they revalidate, even when nothing scrolled.
+        if (Math.abs(_dropdown.screenLeft - _openScreenLeft) < 0.5 && Math.abs(_dropdown.screenTop - _openScreenTop) < 0.5) {
+            return;
+        }
         hideDropDown();
     }
     
