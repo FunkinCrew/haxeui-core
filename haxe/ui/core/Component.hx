@@ -2,6 +2,7 @@ package haxe.ui.core;
 
 import haxe.ui.tooltips.ToolTipManager;
 import haxe.ui.backend.ComponentImpl;
+import haxe.ui.dragdrop.DragManager;
 import haxe.ui.events.AnimationEvent;
 import haxe.ui.events.MouseEvent;
 import haxe.ui.events.UIEvent;
@@ -700,6 +701,7 @@ class Component extends ComponentImpl
         if (_compositeBuilder != null) {
             _compositeBuilder.destroy();
         }
+        DragManager.instance.unregisterDraggable(this);
         LocaleManager.instance.unregisterComponent(this);
         ToolTipManager.instance.unregisterTooltip(this);
         handleDestroy();
