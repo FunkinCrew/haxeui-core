@@ -547,6 +547,16 @@ private class Builder extends CompositeBuilder {
         return null;
     }
 
+    public override function destroy():Void
+    {
+        for (view in _views)
+        {
+            view.disposeComponent();
+        }
+        _views = [];
+        super.destroy();
+    }
+
     public override function getComponentAt(index:Int):Component {
         return _views[index];
     }
