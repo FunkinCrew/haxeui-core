@@ -560,7 +560,7 @@ private class HSVColorPickerImpl extends ColorPickerImpl {
         var g = Std.parseInt("0x" + hexG);
         var b = Std.parseInt("0x" + hexB);
         
-        if (_trackingSaturationValue == false && _sliderTracking == false) {
+        if (_trackingSaturationValue == false && _trackingHue == false && _sliderTracking == false) {
             applyRGBA({r:r, g:g, b:b});
         }
     }
@@ -645,6 +645,11 @@ private class HSVColorPickerImpl extends ColorPickerImpl {
         var cx = hueGraph.width;
         var step = 360 / (hueGraph.width - 10);
         var hue = (x - 3) * step;
+        if (hue > 360) {
+            hue = 360;
+        } else if (hue < 0) {
+            hue = 0;
+        }
         applyHSV({h: hue, s: _currentColorHSV.s, v: _currentColorHSV.v });
     }
     
