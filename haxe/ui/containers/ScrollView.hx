@@ -64,13 +64,13 @@ class ScrollView extends InteractiveComponent implements IScroller {
     @:clonable @:behaviour(IsScrollableBehaviour)                   public var isScrollable:Bool;
     @:clonable @:behaviour(EmptyContentsComponent)                  public var emptyContentsComponent:Component;
     @:clonable @:behaviour(EmptyContentsText)                       public var emptyContentsText:String;
-    
+
     @:call(EnsureVisible)                                           public function ensureVisible(component:Component):Void;
     @:call(FindHorizontalScrollbar)                                 public function findHorizontalScrollbar():Component;
     @:call(FindVerticalScrollbar)                                   public function findVerticalScrollbar():Component;
 
     @:event(ScrollEvent.SCROLL)                                     public var onScroll:ScrollEvent->Void;
-    
+
     //***********************************************************************************************************
     // Validation
     //***********************************************************************************************************
@@ -102,7 +102,7 @@ private class EnsureVisible extends DefaultBehaviour {
         if (scrollview.allowAutoScroll == false) {
             return null;
         }
-        
+
         var c:Component = cast(param, Component);
         if (c == scrollview) {
             return null;
@@ -120,17 +120,17 @@ private class EnsureVisible extends DefaultBehaviour {
         if (hscroll != null) {
             hscrollPos = hscroll.pos;
         }
-        
+
         var vscroll:VerticalScroll = scrollview.findComponent(VerticalScroll, false);
         var vscrollPos:Float = 0;
         if (vscroll != null) {
             vscrollPos = vscroll.pos;
         }
-        
+
         var componentScreenRect = new Rectangle(c.screenLeft, c.screenTop, c.width, c.height);
         var componentRect = new Rectangle(c.screenLeft + hscrollPos, c.screenTop + vscrollPos, c.width, c.height);
         var scrollRect = new Rectangle(scrollview.screenLeft, scrollview.screenTop, scrollview.width, scrollview.height);
-        
+
         var scrollRectFixed = scrollRect.copy();
         var usableSize = scrollview.layout.usableSize;
         scrollRectFixed.width = usableSize.width;
@@ -139,39 +139,39 @@ private class EnsureVisible extends DefaultBehaviour {
         if (scrollRectFixed.containsRect(componentScreenRect)) { // fully contains child rect, do nothing
             return null;
         }
-        
+
         var newHScrollPos = hscrollPos;
         var newVScrollPos = vscrollPos;
-        
+
         var fixedRight = componentRect.right - scrollRect.left;
         var fixedLeft = componentRect.left - scrollRect.left;
         var fixedBottom = componentRect.bottom - scrollRect.top;
         var fixedTop = componentRect.top - scrollRect.top;
         var offsetLeft = 1;// contentsRect.left - scrollRect.left;
         var offsetTop = 1;// contentsRect.top - scrollRect.top;
-        
+
         if (scrollRectFixed.containsPoint(componentScreenRect.right, componentScreenRect.top) == false) {
             newHScrollPos = fixedRight - (usableSize.width) + (calcOffset(c, "right") - offsetLeft);
         } else if (scrollRectFixed.containsPoint(componentScreenRect.left, componentScreenRect.top) == false) {
             newHScrollPos = fixedLeft - (calcOffset(c, "left") + offsetLeft);
         }
-        
+
         if (scrollRectFixed.containsPoint(componentScreenRect.left, componentScreenRect.bottom) == false) {
             newVScrollPos = fixedBottom - (usableSize.height) + (calcOffset(c, "bottom") - offsetTop);
         } else if (scrollRectFixed.containsPoint(componentScreenRect.left, componentScreenRect.top) == false) {
             newVScrollPos = fixedTop - (calcOffset(c, "top") + offsetTop);
         }
-        
+
         if (hscroll != null) {
             hscroll.pos = newHScrollPos;
         }
         if (vscroll != null) {
             vscroll.pos = newVScrollPos;
         }
-        
+
         return null;
     }
-    
+
     private function calcOffset(c:Component, which:String) {
         var p:Float = 0;
         var r = c.parentComponent;
@@ -586,7 +586,7 @@ private class ThumbSize extends DataBehaviour {
         _scrollview = scrollview;
     }
 
-    public override function validateData() { 
+    public override function validateData() {
         _scrollview.hscrollThumbSize = _value;
         _scrollview.vscrollThumbSize = _value;
     }
@@ -865,7 +865,7 @@ class ScrollViewEvents extends haxe.ui.events.Events {
         }
     }
 
-    private function onComponentAdded(event:UIEvent) { 
+    private function onComponentAdded(event:UIEvent) {
         if ((event.relatedComponent is Scroll)) {
             event.cancel();
             var scrollEvent = new ScrollEvent(ScrollEvent.CHANGE);
@@ -873,11 +873,11 @@ class ScrollViewEvents extends haxe.ui.events.Events {
         }
     }
 
-    private function onContentsComponentAdded(event:UIEvent) { 
+    private function onContentsComponentAdded(event:UIEvent) {
         _scrollview.dispatch(event);
     }
 
-    private function onComponentRemoved(event:UIEvent) { 
+    private function onComponentRemoved(event:UIEvent) {
         if ((event.relatedComponent is Scroll)) {
             event.cancel();
             var scrollEvent = new ScrollEvent(ScrollEvent.CHANGE);
@@ -885,7 +885,7 @@ class ScrollViewEvents extends haxe.ui.events.Events {
         }
     }
 
-    private function onContentsComponentRemoved(event:UIEvent) { 
+    private function onContentsComponentRemoved(event:UIEvent) {
         _scrollview.dispatch(event);
     }
 
@@ -931,7 +931,7 @@ class ScrollViewEvents extends haxe.ui.events.Events {
             onMouseDown(event);
         }
     }
-    
+
     private var _offset:Point;
     private static inline var INERTIAL_TIME_CONSTANT:Int = 325;
     private var _inertia:Inertia = null;
@@ -950,10 +950,13 @@ class ScrollViewEvents extends haxe.ui.events.Events {
 
         var componentOffset = _scrollview.getComponentOffset();
         // we want to disallow mouse scrolling if we are under a textfield/textarea as this stops selection of data in textfield
-        // if we are under a scrollbar, lets let the scroll bar handle it (rather than scrollview intefering) 
+        // if we are under a scrollbar, lets let the scroll bar handle it (rather than scrollview intefering)
         var under = _scrollview.findComponentsUnderPoint(event.screenX - componentOffset.x, event.screenY - componentOffset.y);
         for (c in under) {
             if (c.hasTextInput() || (c is Scroll)) {
+                return;
+            }
+            if ((c is haxe.ui.components.Button)) {
                 return;
             }
         }
@@ -1241,7 +1244,7 @@ class ScrollViewEvents extends haxe.ui.events.Events {
             if (scroll == null) {
                 scroll = _scrollview.findComponent(secondaryType, false);
             }
-    
+
             if (_scrollview.autoHideScrolls == true && _fadeTimer == null && scroll != null) {
                 scroll.fadeIn();
             }
@@ -1314,7 +1317,7 @@ class ScrollViewEvents extends haxe.ui.events.Events {
             }
         }
     }
-    
+
     private function onActionStart(event:ActionEvent) {
         if (_scrollview.scrollPolicy == ScrollPolicy.NEVER) {
             return;
@@ -1402,7 +1405,7 @@ class ScrollViewBuilder extends CompositeBuilder {
                     if (label != null) {
                         label.text = _scrollview.emptyContentsText;
                     }
-                }                
+                }
             }
 
             emptyContentsComponent.show();
@@ -1474,7 +1477,7 @@ class ScrollViewBuilder extends CompositeBuilder {
         checkEmptyContentsComponent();
         return true;
     }
-    
+
     public override function getComponentIndex(child:Component):Int {
         return _contents.getComponentIndex(child);
     }
@@ -1503,7 +1506,7 @@ class ScrollViewBuilder extends CompositeBuilder {
         }
     }
 
-    private function onContentsChanged(event:UIEvent) { 
+    private function onContentsChanged(event:UIEvent) {
         checkEmptyContentsComponent(event.target);
     }
 
@@ -1746,13 +1749,13 @@ class ScrollViewBuilder extends CompositeBuilder {
         if (style.mode == "mobile") {
             _scrollview.autoHideScrolls = true;
         }
-        
+
         if (style.contentWidth != null && style.contentWidth != _scrollview.contentWidth) {
             _scrollview.contentWidth = style.contentWidth;
         } else if (style.contentWidthPercent != null && style.contentWidthPercent != _scrollview.percentContentWidth) {
             _scrollview.percentContentWidth = style.contentWidthPercent;
         }
-        
+
         if (style.contentHeight != null && style.contentHeight != _scrollview.contentHeight) {
             _scrollview.contentHeight = style.contentHeight;
         } else if (style.contentHeightPercent != null && style.contentHeightPercent != _scrollview.percentContentHeight) {
