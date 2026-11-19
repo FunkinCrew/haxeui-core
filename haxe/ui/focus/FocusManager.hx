@@ -113,19 +113,59 @@ class FocusManager extends FocusManagerImpl {
 
     public var focus(get, set):IFocusable;
     private function get_focus():IFocusable {
-        // Walk all roots top-down. Using Screen.topComponent alone is unreliable
-        // because a visible tooltip/popup becomes "top" and shadows focus state
-        // in the real UI beneath it. Tooltips/popups carry no focusable children,
-        // so checking them first is cheap and returning the first match is safe.
+        if (!enabled) {
+            return null;
+        }
         var roots = Screen.instance.rootComponents;
         if (roots == null) return null;
-        var n = roots.length - 1;
-        while (n >= 0) {
-            var f = buildFocusableList(roots[n], null);
-            if (f != null) return f;
-            n--;
+        var best:IFocusable = null;
+        var bestIndex:Int = -1;
+        var i = _focused.length - 1;
+        while (i >= 0) {
+            var f = _focused[i];
+            var c:Component = cast f;
+            if (f.focus == false || @:privateAccess c._isDisposed == true) {
+                _focused.splice(i, 1);
+                i--;
+                continue;
+            }
+            if (f.allowFocus == true && f.disabled == false) {
+                var root = visibleRoot(c);
+                if (root != null) {
+                    var index = roots.indexOf(root);
+                    if (index > bestIndex) {
+                        bestIndex = index;
+                        best = f;
+                    }
+                }
+            }
+            i--;
         }
-        return null;
+        return best;
+    }
+
+    private var _focused:Array<IFocusable> = [];
+
+    /**
+     * Called by components when their focus flag changes.
+     */
+    public function trackFocus(f:IFocusable, value:Bool) {
+        _focused.remove(f);
+        if (value) {
+            _focused.push(f);
+        }
+    }
+
+    private function visibleRoot(c:Component):Component {
+        var root:Component = null;
+        while (c != null) {
+            if (c.hidden == true || @:privateAccess c._isDisposed == true) {
+                return null;
+            }
+            root = c;
+            c = c.parentComponent;
+        }
+        return root;
     }
 
     private var _lastFocuses:Map<Component, IFocusable> = new Map<Component, IFocusable>();

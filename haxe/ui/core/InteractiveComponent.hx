@@ -36,6 +36,7 @@ class InteractiveComponent extends Component implements IFocusable implements IV
         }
 
         _focus = value;
+        FocusManager.instance.trackFocus(cast(this, IFocusable), value);
         var eventType = null;
         if (_focus == true) {
             eventType = FocusEvent.FOCUS_IN;
