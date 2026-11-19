@@ -130,7 +130,7 @@ class ColorUtil {
         q = value * (1 - f * saturation);
         t = value * (1 - (1 - f) * saturation);
         
-        switch (i) {
+        switch (i % 6) {
             case 0: r = value; g = t; b = p;
             case 1: r = q; g = value; b = p;
             case 2: r = p; g = value; b = t;
@@ -165,7 +165,7 @@ class ColorUtil {
         q = value * (1 - f * saturation);
         t = value * (1 - (1 - f) * saturation);
         
-        switch (i) {
+        switch (i % 6) {
             case 0: r = value; g = t; b = p;
             case 1: r = q; g = value; b = p;
             case 2: r = p; g = value; b = t;
