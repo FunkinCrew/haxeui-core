@@ -178,6 +178,14 @@ class DialogBase extends Box implements Draggable {
     private var _resizeS:Bool = false;
     private var _resizeW:Bool = false;
     private var _resizing:Bool = false;
+
+    /**
+     * Whether the user is dragging one of the dialog's edges right now.
+     */
+    public var isResizing(get, never):Bool;
+    private function get_isResizing():Bool {
+        return _resizing;
+    }
     private var _resizeSuspendedDrag:Bool = false;
     private var _resizeLastX:Float = 0;
     private var _resizeLastY:Float = 0;
@@ -322,7 +330,8 @@ class DialogBase extends Box implements Draggable {
         var w:Float = _resizeStartWidth + (_resizeE ? dx : (_resizeW ? -dx : 0));
         var h:Float = _resizeStartHeight + (_resizeS ? dy : (_resizeN ? -dy : 0));
 
-        if (keepAspectRatio && canResizeVertically() && _resizeStartHeight > 0) {
+        // CTRL key is a shortcut to keep the aspect ratio while resizing (if not disabled by keepAspectRatio)
+        if ((keepAspectRatio || e.ctrlKey) && canResizeVertically() && _resizeStartHeight > 0) {
             var ratio:Float = _resizeStartWidth / _resizeStartHeight;
             // Keep the aspect ratio, but don't let the dialog shrink below its minimum size.
             if (horizontal && (!vertical || w / _resizeStartWidth >= h / _resizeStartHeight)) {
