@@ -48,7 +48,7 @@ class TabBarLayout extends DefaultLayout {
         super();
         _roundFullWidths = true;
     }
-    
+
     private override function repositionChildren() {
         super.repositionChildren();
 
@@ -573,7 +573,7 @@ private class Builder extends CompositeBuilder {
             _containerPosition = _tabbar.layout.paddingLeft;
         }
 
-        if (_container.width > _tabbar.layout.usableWidth && _tabbar.layout.usableWidth > 0) {
+        if (_container.percentWidth == null && _container.width > _tabbar.layout.usableWidth && _tabbar.layout.usableWidth > 0) {
             showScrollButtons();
             _container.left = _containerPosition;
         } else {
@@ -699,10 +699,10 @@ private class Builder extends CompositeBuilder {
             _scrollRight.hide();
         }
     }
-    
+
     public override function applyStyle(style:Style) {
         super.applyStyle(style);
-        
+
         haxe.ui.macros.ComponentMacros.cascadeStylesToList(Button, [
             color, fontName, fontSize, textAlign, fontBold, fontUnderline, fontItalic
         ]);

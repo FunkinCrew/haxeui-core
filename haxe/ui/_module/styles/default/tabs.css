@@ -30,6 +30,10 @@
     icon-position: far-left;
 }
 
+.tabbar-button .label {
+    word-wrap: false;
+}
+
 .tabbar-button .icon {
     pointer-events: none;
 }
@@ -68,7 +72,7 @@
     border-bottom-color: $secondary-background-color;
     background-color: $secondary-background-color;
     border-left-width: 0px;
-    
+
     border-top: 2px solid $accent-color;
 }
 
@@ -172,7 +176,7 @@
     border-top-color: $secondary-background-color;
     background-color: $secondary-background-color;
     border-left-width: 0px;
-    
+
     border-bottom: 2px solid $accent-color;
 }
 
@@ -314,7 +318,7 @@
     border: none;
 }
 
-.tabbar.pill-tabs, .tabview.pill-tabs > .tabbar { 
+.tabbar.pill-tabs, .tabview.pill-tabs > .tabbar {
     background-color: $solid-background-color-down;
     padding: 5px;
 }

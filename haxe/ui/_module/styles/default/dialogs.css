@@ -122,3 +122,9 @@
 .messagebox {
     initial-width: 300px;
 }
+.dialog-resize-outline {
+    border: 2px solid #4A90D9;
+    background-color: #4A90D9;
+    background-opacity: 0.15;
+    pointer-events: none;
+}
