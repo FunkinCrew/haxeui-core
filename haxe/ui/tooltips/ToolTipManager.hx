@@ -172,7 +172,7 @@ class ToolTipManager {
         _timer = null;
         if (_currentRegion != null) {
             showToolTipForRegion(_currentRegion);
-        } else if (_currentComponent != null && _currentComponent.exists) {
+        } else if (_currentComponent != null #if flixel && _currentComponent.exists #end) {
             showToolTipForComponent(_currentComponent);
         }
     }
