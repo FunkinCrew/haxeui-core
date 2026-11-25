@@ -464,6 +464,9 @@ private class DataSourceBehaviour extends DataBehaviour {
     
     private function dispatchChanged() {
         Toolkit.callLater(function() {
+            if (_component == null) {
+                return;
+            }
             _component.dispatch(new UIEvent(UIEvent.PROPERTY_CHANGE, false, "dataSource"));
         });
     }
