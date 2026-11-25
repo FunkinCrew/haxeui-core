@@ -39,8 +39,8 @@ class NumberStepper extends InteractiveComponent implements ICompositeInteractiv
 
     /**
      * The number displayed inside of the stepper.
-     * 
-     * `value` is used as a universal way to access the "core" value a component is based on. 
+     *
+     * `value` is used as a universal way to access the "core" value a component is based on.
      * in this case its the number inside of the stepper.
      */
     @:clonable @:value(pos)                                             public var value:Dynamic;
@@ -67,14 +67,14 @@ class NumberStepper extends InteractiveComponent implements ICompositeInteractiv
 
     /**
      * The amount of numbers displayed after the decimal point.
-     * 
+     *
      * `0` or `null` means that no decimal point is displayed. defaults to `null`.
      */
     @:clonable @:behaviour(DefaultBehaviour, null)                      public var precision:Null<Int>;
 
     /**
      * If true, overflowing values will be fixed to the closest, valid value.
-     * 
+     *
      * for example, if the user types `20`, but the maximum is `10`, the value will automatically be set to `10`.
      */
     @:clonable @:behaviour(DefaultBehaviour, false)                     public var autoCorrect:Bool;
@@ -83,17 +83,23 @@ class NumberStepper extends InteractiveComponent implements ICompositeInteractiv
      * The time, in milliseconds, that the number stepper will auto corrects its own value
      */
      @:clonable @:behaviour(DefaultBehaviour, 850)                      public var autoCorrectInterval:Int;
-    
+
     /**
      * The character that will be used to separate decimals (eg 100.00 or 100,00)
      */
     @:clonable @:behaviour(DecimalSeparatorBehaviour)  public var decimalSeparator:String;
+
+    /**
+     * Set while the user is typing.
+     */
+    @:noCompletion private var _typing:Bool = false;
 }
 
 //***********************************************************************************************************
 // Behaviours
 //***********************************************************************************************************
 @:dox(hide) @:noCompletion
+@:access(haxe.ui.components.NumberStepper)
 private class PosBehaviour extends DataBehaviour {
     public override function validateData() {
         var stepper = cast(_component, NumberStepper);
@@ -101,7 +107,7 @@ private class PosBehaviour extends DataBehaviour {
         if (preciseValue == null) {
             preciseValue = stepper.min;
         }
-        
+
         preciseValue = MathUtil.clamp(preciseValue, stepper.min, stepper.max);
         var wasRounded = false;
         if (stepper.precision != null) {
@@ -112,19 +118,21 @@ private class PosBehaviour extends DataBehaviour {
             }
         }
         _value = preciseValue;
-        
-        var stringValue = StringUtil.padDecimal(preciseValue, stepper.precision);
-        var value:TextField = stepper.findComponent("value", TextField);
-        var caretIndex = value.caretIndex;
-        stringValue = StringTools.replace(stringValue, ",", ".");
-        stringValue = StringTools.replace(stringValue, ".", stepper.decimalSeparator);
-        value.text = stringValue;
-        if (wasRounded) {
-            value.caretIndex = stringValue.length;
-        } else {
-            value.caretIndex = caretIndex;
+
+        if (!stepper._typing) {
+            var stringValue = StringUtil.padDecimal(preciseValue, stepper.precision);
+            var value:TextField = stepper.findComponent("value", TextField);
+            var caretIndex = value.caretIndex;
+            stringValue = StringTools.replace(stringValue, ",", ".");
+            stringValue = StringTools.replace(stringValue, ".", stepper.decimalSeparator);
+            value.text = stringValue;
+            if (wasRounded) {
+                value.caretIndex = stringValue.length;
+            } else {
+                value.caretIndex = caretIndex;
+            }
         }
-        
+
         var event = new UIEvent(UIEvent.CHANGE);
         event.previousValue = _previousValue;
         event.value = _value;
@@ -155,7 +163,7 @@ private class Builder extends CompositeBuilder {
         _stepper = stepper;
         _stepper.layout = new StandardLayout();
     }
-    
+
     public override function create() {
         var value = new TextField();
         value.id = "value";
@@ -163,7 +171,7 @@ private class Builder extends CompositeBuilder {
         value.allowFocus = false;
         value.restrictChars = "0-9\\-\\.\\,";
         _stepper.addComponent(value);
-        
+
         var deinc = new Button();
         deinc.id = "deinc";
         deinc.addClass("stepper-deinc");
@@ -178,14 +186,14 @@ private class Builder extends CompositeBuilder {
         inc.repeater = true;
         _stepper.addComponent(inc);
     }
-    
+
     public override function applyStyle(style:Style) {
         if (style.layout == "classic") {
             _stepper.layout = new ClassicLayout();
         } else if (style.layout == null && !(_stepper.layout is StandardLayout)) {
             _stepper.layout = new StandardLayout();
         }
-        
+
         var value:TextField = _stepper.findComponent("value", TextField);
         if (value != null &&
             (value.customStyle.color != style.color ||
@@ -209,6 +217,7 @@ private class Builder extends CompositeBuilder {
 //***********************************************************************************************************
 @:dox(hide) @:noCompletion
 @:access(haxe.ui.core.Component)
+@:access(haxe.ui.components.NumberStepper)
 private class Events extends haxe.ui.events.Events {
     private var _stepper:NumberStepper;
 
@@ -216,7 +225,7 @@ private class Events extends haxe.ui.events.Events {
         super(stepper);
         _stepper = stepper;
     }
-    
+
     public override function register() {
         if (!_stepper.hasEvent(MouseEvent.CLICK, onClick)) {
             _stepper.registerEvent(MouseEvent.CLICK, onClick);
@@ -233,17 +242,17 @@ private class Events extends haxe.ui.events.Events {
         if (!LocaleManager.instance.hasEvent(LocaleEvent.LOCALE_CHANGED, onLocaleChanged)) {
             LocaleManager.instance.registerEvent(LocaleEvent.LOCALE_CHANGED, onLocaleChanged);
         }
-        
+
         var value:TextField = _stepper.findComponent("value", TextField);
         if (!value.hasEvent(UIEvent.CHANGE, onValueFieldChange)) {
             value.registerEvent(UIEvent.CHANGE, onValueFieldChange);
         }
-        
+
         var deinc:Button = _stepper.findComponent("deinc", Button);
         if (!deinc.hasEvent(MouseEvent.CLICK, onDeinc)) {
             deinc.registerEvent(MouseEvent.CLICK, onDeinc);
         }
-        
+
         var inc:Button = _stepper.findComponent("inc", Button);
         if (!inc.hasEvent(MouseEvent.CLICK, onInc)) {
             inc.registerEvent(MouseEvent.CLICK, onInc);
@@ -252,20 +261,20 @@ private class Events extends haxe.ui.events.Events {
             registerEvent(ActionEvent.ACTION_START, onActionStart);
         }
     }
-    
+
     public override function unregister() {
         _stepper.unregisterEvent(MouseEvent.CLICK, onClick);
         _stepper.unregisterEvent(FocusEvent.FOCUS_IN, onFocusIn);
         _stepper.unregisterEvent(FocusEvent.FOCUS_OUT, onFocusOut);
         _stepper.unregisterEvent(MouseEvent.MOUSE_WHEEL, onMouseWheel);
         removeLocaleChanged();
-            
+
         var value:TextField = _stepper.findComponent("value", TextField);
         value.unregisterEvent(UIEvent.CHANGE, onValueFieldChange);
-        
+
         var deinc:Button = _stepper.findComponent("deinc", Button);
         deinc.unregisterEvent(MouseEvent.CLICK, onDeinc);
-        
+
         var inc:Button = _stepper.findComponent("inc", Button);
         inc.unregisterEvent(MouseEvent.CLICK, onInc);
         unregisterEvent(ActionEvent.ACTION_START, onActionStart);
@@ -288,17 +297,34 @@ private class Events extends haxe.ui.events.Events {
                _autoCorrectTimer.stop();
                _autoCorrectTimer = null;
             }
-            
+
             ValueHelper.validateValue(_stepper);
             _autoCorrectTimer = new Timer(_stepper.autoCorrectInterval, onAutoCorrectTimer);
         } else {
             var newValue = ValueHelper.validateValue(_stepper);
             if (newValue != null) {
+                // Apply the value, but leave the text alone until the user is done typing.
+                _stepper._typing = true;
                 _stepper.pos = newValue;
+                _stepper._typing = false;
             }
         }
     }
-    
+
+    private function formatValueField() {
+        var value:TextField = _stepper.findComponent("value", TextField);
+        if (value == null || _stepper.pos == null) {
+            return;
+        }
+        var stringValue = StringUtil.padDecimal(_stepper.pos, _stepper.precision);
+        stringValue = StringTools.replace(stringValue, ",", ".");
+        stringValue = StringTools.replace(stringValue, ".", _stepper.decimalSeparator);
+        if (value.text != stringValue) {
+            value.text = stringValue;
+        }
+        _stepper.removeClass("invalid-value");
+    }
+
     private function onAutoCorrectTimer() {
         _autoCorrectTimer.stop();
         _autoCorrectTimer = null;
@@ -306,7 +332,7 @@ private class Events extends haxe.ui.events.Events {
         if (_stepper._isDisposed) {
             return;
         }
-        
+
         var value:TextField = _stepper.findComponent("value", TextField);
         if (value == null) {
             return;
@@ -323,17 +349,17 @@ private class Events extends haxe.ui.events.Events {
         stringValue = StringTools.replace(stringValue, ".", _stepper.decimalSeparator);
         value.text = stringValue;
     }
-    
+
     private function onDeinc(event:MouseEvent) {
         _stepper.focus = true;
-        ValueHelper.deincrementValue(_stepper);
+        ValueHelper.deincrementValue(_stepper, event.shiftKey);
     }
-    
+
     private function onInc(event:MouseEvent) {
         _stepper.focus = true;
-        ValueHelper.incrementValue(_stepper);
+        ValueHelper.incrementValue(_stepper, event.shiftKey);
     }
-    
+
     private function onMouseWheel(event:MouseEvent) {
         if (_target.isInScroller && _stepper.focus == false) {
             return;
@@ -341,26 +367,27 @@ private class Events extends haxe.ui.events.Events {
         event.cancel();
         _stepper.focus = true;
         if (event.delta > 0) {
-            ValueHelper.incrementValue(_stepper);
+            ValueHelper.incrementValue(_stepper, event.shiftKey);
         } else {
-            ValueHelper.deincrementValue(_stepper);
+            ValueHelper.deincrementValue(_stepper, event.shiftKey);
         }
     }
-    
+
     private function onClick(_) {
         _stepper.focus = true;
     }
-    
+
     private function onFocusIn(event:FocusEvent) {
         var value:TextField = _stepper.findComponent("value", TextField);
         value.getTextInput().focus();
     }
-    
+
     private function onFocusOut(event:FocusEvent) {
         var value:TextField = _stepper.findComponent("value", TextField);
         value.getTextInput().blur();
+        formatValueField();
     }
-    
+
     private function onActionStart(event:ActionEvent) {
         switch (event.action) {
             case ActionType.DOWN:
@@ -369,7 +396,7 @@ private class Events extends haxe.ui.events.Events {
             case ActionType.UP:
                 ValueHelper.incrementValue(_stepper);
                 event.repeater = true;
-            case _:      
+            case _:
         }
     }
 
@@ -393,29 +420,29 @@ private class StandardLayout extends DefaultLayout {
         var value = findComponent("value", TextField);
         var deinc = findComponent("deinc", Button);
         var inc = findComponent("inc", Button);
-        
+
         var u = usableSize;
-        
+
         deinc.height = u.height - (borderSize * 2);
         value.width = u.width - (deinc.width + inc.width);
         inc.height = u.height - (borderSize * 2);
     }
-    
+
     private override function repositionChildren() {
         var value = findComponent("value", TextField);
         var deinc = findComponent("deinc", Button);
         var inc = findComponent("inc", Button);
-        
+
         deinc.left = paddingLeft + borderSize;
         deinc.top = paddingTop + borderSize;
-        
+
         value.left = deinc.left + deinc.width;
         value.top = paddingTop + marginTop(value);
-        
+
         inc.left = value.left + value.width - borderSize - borderSize;
         inc.top = paddingTop + borderSize;
     }
-    
+
     private override function get_borderSize():Float {
         if (_component.style == null) {
             return 0;
@@ -432,33 +459,33 @@ private class ClassicLayout extends DefaultLayout {
         var value = findComponent("value", TextField);
         var deinc = findComponent("deinc", Button);
         var inc = findComponent("inc", Button);
-        
+
         var u = usableSize;
         u.height -= borderSize * 2;
-        
+
         deinc.height = u.height / 2;
         value.width = u.width - deinc.width;
         inc.height = u.height / 2;
     }
-    
+
     private override function repositionChildren() {
         var value = findComponent("value", TextField);
         var deinc = findComponent("deinc", Button);
         var inc = findComponent("inc", Button);
-        
+
         var u = usableSize;
         u.height -= borderSize * 2;
-        
+
         deinc.left = u.width - deinc.width - paddingRight - borderSize;
         deinc.top = u.height - inc.height - paddingBottom - borderSize + marginTop(deinc) + (borderSize * 2);
-        
+
         value.left = paddingLeft;
         value.top = paddingTop + marginTop(value);
-        
+
         inc.left = u.width - deinc.width - paddingRight - borderSize;
         inc.top = paddingTop + borderSize;
     }
-    
+
     private override function get_borderSize():Float {
         var n = super.get_borderSize();
         return n;
@@ -478,20 +505,20 @@ private class ValueHelper {
             textValue = StringTools.replace(textValue, stepper.decimalSeparator, ".");
         }
         var parsedValue:Null<Float> = Std.parseFloat(textValue);
-        
+
         var valid = StringUtil.countTokens(textValue, ".") <= 1;
         if (textValue == null || StringTools.trim(textValue) == "") {
             valid = false;
         }
-        
+
         if (Math.isNaN(parsedValue)) {
             valid = false;
         }
-        
+
         if (min != null && parsedValue < min) {
             valid = false;
         }
-        
+
         if (max != null && parsedValue > max) {
             valid = false;
         }
@@ -507,11 +534,33 @@ private class ValueHelper {
         } else {
             stepper.removeClass("invalid-value");
         }
-        
+
         return parsedValue;
     }
-    
-    public static function incrementValue(stepper:NumberStepper) {
+
+    private static function decimalsOf(v:Float):Int {
+        var s = Std.string(v);
+        var index = s.indexOf(".");
+        return (index == -1) ? 0 : s.length - index - 1;
+    }
+
+    /**
+     * How many decimals a fine step uses: the stepper's precision, or the decimals in `step`.
+     */
+    private static function fineDigits(stepper:NumberStepper, step:Float):Int {
+        var digits:Int = (stepper.precision != null) ? stepper.precision : decimalsOf(step);
+        return Std.int(Math.max(digits, decimalsOf(step)));
+    }
+
+    /**
+     * The smallest digit the stepper shows, for stepping finely (eg `0.01` with a precision of 2).
+     */
+    private static function fineStep(stepper:NumberStepper, step:Float):Float {
+        var digits:Int = (stepper.precision != null) ? stepper.precision : decimalsOf(step);
+        return Math.min(Math.pow(10, -digits), step);
+    }
+
+    public static function incrementValue(stepper:NumberStepper, fine:Bool = false) {
         var value = stepper.findComponent("value", TextField);
         var textValue = value.text;
         var min = stepper.min;
@@ -520,27 +569,33 @@ private class ValueHelper {
         if (step == null) {
             step = 1;
         }
+        if (fine) {
+            step = fineStep(stepper, step);
+        }
         var newValue:Float = stepper.pos;
-        
+
         if (textValue == null || StringTools.trim(textValue) == "") {
             if (min != null) {
                 newValue = min;
             }
         } else {
             newValue += step;
-            if (stepper.forceStep) {
+            if (fine) {
+                // Rounded so repeated small steps don't build up float error.
+                newValue = MathUtil.round(newValue, Std.int(Math.max(fineDigits(stepper, step), decimalsOf(stepper.pos))));
+            } else if (stepper.forceStep) {
                 newValue = MathUtil.roundToNearest(newValue, step);
             }
         }
-        
+
         if (max != null && newValue > max) {
             newValue = max;
         }
-        
+
         stepper.pos = newValue;
     }
-    
-    public static function deincrementValue(stepper:NumberStepper) {
+
+    public static function deincrementValue(stepper:NumberStepper, fine:Bool = false) {
         var value = stepper.findComponent("value", TextField);
         var textValue = value.text;
         var min = stepper.min;
@@ -548,23 +603,29 @@ private class ValueHelper {
         if (step == null) {
             step = 1;
         }
+        if (fine) {
+            step = fineStep(stepper, step);
+        }
         var newValue:Float = stepper.pos;
-        
+
         if (textValue == null || StringTools.trim(textValue) == "") {
             if (min != null) {
                 newValue = min;
             }
         } else {
             newValue -= step;
-            if (stepper.forceStep) {
+            if (fine) {
+                // Rounded so repeated small steps don't build up float error.
+                newValue = MathUtil.round(newValue, Std.int(Math.max(fineDigits(stepper, step), decimalsOf(stepper.pos))));
+            } else if (stepper.forceStep) {
                 newValue = MathUtil.roundToNearest(newValue, step);
             }
         }
-        
+
         if (min != null && newValue < min) {
             newValue = min;
         }
-        
+
         stepper.pos = newValue;
     }
 }
