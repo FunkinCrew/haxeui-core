@@ -257,12 +257,12 @@ class ToolTipManager {
         if (component == null) {
             return;
         }
-        
+
         if (component.disabled == true || component.hidden == true) {
             stopCurrent();
             return;
         }
-        
+
         createToolTip();
 
         _toolTip.hide();
@@ -351,7 +351,8 @@ class ToolTipManager {
             x = x - w;
         }
         if (y + h > maxY) {
-            y = _lastMouseEvent.screenY - h - (_toolTip.marginTop / 2);
+            var anchorY:Float = (top != null) ? top : _lastMouseEvent.screenY;
+            y = anchorY - h - (_toolTip.marginTop / 2);
         }
 
         _toolTip.left = x * Toolkit.scale;
